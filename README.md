@@ -1,63 +1,39 @@
 # SiteTerminal
-SiteTerminal/
-│
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   │
-│   ├── api/
-│   │   ├── inspect/
-│   │   │   └── route.ts
-│   │   ├── status/
-│   │   │   └── route.ts
-│   │   ├── headers/
-│   │   │   └── route.ts
-│   │   ├── seo/
-│   │   │   └── route.ts
-│   │   ├── links/
-│   │   │   └── route.ts
-│   │   ├── robots/
-│   │   │   └── route.ts
-│   │   ├── sitemap/
-│   │   │   └── route.ts
-│   │   ├── dns/
-│   │   │   └── route.ts
-│   │   └── tls/
-│   │       └── route.ts
-│   │
-│   └── globals.css
-│
-├── components/
-│   ├── Terminal.tsx
-│   ├── CommandInput.tsx
-│   ├── OutputBlock.tsx
-│   ├── LoadingSpinner.tsx
-│   └── Disclaimer.tsx
-│
-├── lib/
-│   ├── validateUrl.ts
-│   ├── ssrfProtection.ts
-│   ├── fetchWithLimit.ts
-│   ├── securityHeadersAudit.ts
-│   ├── dnsUtils.ts
-│   ├── tlsUtils.ts
-│   ├── cache.ts
-│   └── rateLimiter.ts
-│
-├── styles/
-│   └── terminalTheme.ts
-│
-├── types/
-│   └── api.ts
-│
-├── public/
-│   └── favicon.ico
-│
-├── .env.local
-├── .gitignore
-├── next.config.js
-├── tailwind.config.ts
-├── postcss.config.js
-├── tsconfig.json
-├── package.json
-└── README.md
+
+Terminal-style website inspector (public data only).  
+No vulnerability scanning is performed.
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open: http://localhost:3000
+
+## Commands
+
+- help
+- inspect <url>
+- status <url>
+- headers <url>
+- seo <url>
+- links <url>
+- robots <url>
+- sitemap <url>
+- dns <domain>
+- tls <domain>
+
+## Security notes
+
+Includes basic protections:
+- Only http/https URLs
+- SSRF protection by DNS resolution + blocked IP ranges
+- Redirect limit (5)
+- Timeout (10s)
+- Response size cap (2MB)
+- Simple per-IP rate limiting (30/min)
+- 10 minute in-memory caching
+
+For production, replace in-memory rate limit + cache with Redis.

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     const metaDescription = $('meta[name="description"]').attr("content")?.trim() || null;
 
     let linkCount = 0;
-    $("a[href]").each(() => linkCount++);
+    $("a[href]").each(() => { linkCount++; });
 
     const body = {
       ok: true,

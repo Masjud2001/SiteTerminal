@@ -315,6 +315,7 @@ export default function Terminal({ userId }: { userId?: string }) {
 
     setBusy(true);
     let cmdSuccess = false;
+    let resultData: any = null;
     try {
       const params = new URLSearchParams();
       if (domainCommands.has(cmd)) params.set("domain", arg);
@@ -328,6 +329,7 @@ export default function Terminal({ userId }: { userId?: string }) {
         setOut((o) => [...o, { id: uid(), kind: "error", text: msg }]);
       } else {
         cmdSuccess = true;
+        resultData = data;
         const formatter = FORMATTERS[cmd];
         const text = formatter ? formatter(data) : formatJson(data);
         setOut((o) => [...o, { id: uid(), kind: "output", text }]);
@@ -336,16 +338,36 @@ export default function Terminal({ userId }: { userId?: string }) {
       setOut((o) => [...o, { id: uid(), kind: "error", text: e?.message || "Network error" }]);
     } finally {
       setBusy(false);
-      // Fire-and-forget log (only when authenticated)
       if (userId) {
+        // Log command entry (fast, minimal)
         fetch("/api/logs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ command: cmd, target: arg, success: cmdSuccess }),
         }).catch(() => { });
+
+        // Store full search record with result JSON and show UID
+        if (cmdSuccess && resultData) {
+          fetch("/api/searches", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: cmd, target: arg, result: resultData }),
+          })
+            .then((r) => r.json())
+            .then((r) => {
+              if (r?.uid) {
+                setOut((o) => [
+                  ...o,
+                  { id: uid(), kind: "info", text: `Saved as ${r.uid}  ·  stored in database` },
+                ]);
+              }
+            })
+            .catch(() => { });
+        }
       }
     }
   }
+
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {

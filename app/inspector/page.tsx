@@ -43,9 +43,13 @@ export default async function InspectorPage() {
                         </div>
 
                         <div className="flex flex-wrap gap-4 pt-6">
-                            <button className="px-6 py-3 bg-emerald-500 text-zinc-950 font-bold rounded-lg hover:bg-emerald-400 transition-all transform hover:scale-105">
+                            <a
+                                href="/LocalSecurityInspector.zip"
+                                download
+                                className="px-6 py-3 bg-emerald-500 text-zinc-950 font-bold rounded-lg hover:bg-emerald-400 transition-all transform hover:scale-105"
+                            >
                                 Download for Windows (v1.0.0)
-                            </button>
+                            </a>
                             <Link href="https://github.com" className="px-6 py-3 border border-zinc-700 text-zinc-300 font-medium rounded-lg hover:bg-zinc-800 transition-all">
                                 View Source
                             </Link>

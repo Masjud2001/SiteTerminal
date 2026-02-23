@@ -1,0 +1,6 @@
+{
+    "buildCommand": "prisma generate && next build",
+    "env": {
+        "NEXTAUTH_URL": "https://your-deployment.vercel.app"
+    }
+}

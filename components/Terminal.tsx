@@ -196,6 +196,96 @@ function fmtInspect(d: any): string {
   return lines.join("\n");
 }
 
+function fmtSubdomains(d: any): string {
+  const lines: string[] = [
+    `Subdomain Enumeration — ${d.domain}`,
+    `Total Found: ${d.total}   (via Certificate Transparency)`,
+    ``,
+  ];
+
+  const categories = [
+    { label: "Admin/Panels", items: d.classified.admin },
+    { label: "API/Gateways", items: d.classified.api },
+    { label: "Dev/Staging", items: d.classified.dev },
+    { label: "Mail Servers", items: d.classified.mail },
+    { label: "CDN/Assets", items: d.classified.cdn },
+  ];
+
+  for (const cat of categories) {
+    if (cat.items?.length) {
+      lines.push(`── ${cat.label} ─────────────────────────────────`);
+      cat.items.forEach((s: string) => lines.push(`  • ${s}`));
+      lines.push(``);
+    }
+  }
+
+  if (d.classified.other?.length) {
+    lines.push(`── Other Subdomains ──────────────────────────────`);
+    const others = d.classified.other.slice(0, 30);
+    others.forEach((s: string) => lines.push(`  • ${s}`));
+    if (d.classified.other.length > 30) {
+      lines.push(`    ... and ${d.classified.other.length - 30} more`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function fmtWaf(d: any): string {
+  const lines: string[] = [
+    `WAF/CDN Detection — ${d.url}`,
+    `Status: ${d.protected ? "🛡 Protected" : "⚠ Directly Exposed"}`,
+    ``,
+  ];
+
+  if (d.wafs?.length) lines.push(`WAF:  ${d.wafs.join(", ")}`);
+  if (d.cdn?.length) lines.push(`CDN:  ${d.cdn.join(", ")}`);
+  if (!d.wafs?.length && !d.cdn?.length) lines.push(`Detected: None (Server appears to be origin-exposed)`);
+
+  lines.push(``, `── Security Headers ────────────────────────────────────`);
+  lines.push(`  HSTS:                ${d.securityHeaders.hsts ? "✓ Yes" : "✗ No"}`);
+  lines.push(`  CSP:                 ${d.securityHeaders.csp ? "✓ Yes" : "✗ No"}`);
+  lines.push(`  X-Frame-Options:     ${d.securityHeaders.xfo ? "✓ Yes" : "✗ No"}`);
+  lines.push(`  X-Content-Type:      ${d.securityHeaders.xcto ? "✓ Yes" : "✗ No"}`);
+
+  if (Object.keys(d.interestingHeaders ?? {}).length) {
+    lines.push(``, `── Fingerprint ─────────────────────────────────────────`);
+    for (const [k, v] of Object.entries(d.interestingHeaders)) {
+      lines.push(`  ${k}: ${v}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function fmtWayback(d: any): string {
+  const lines: string[] = [
+    `Wayback Machine Analysis — ${d.domain}`,
+    `Total Snapshots Index: ${d.totalSnapshots}`,
+    `Time Range: ${d.oldestSnapshot} to ${d.newestSnapshot}`,
+    ``,
+  ];
+
+  if (d.sensitiveUrls?.length) {
+    lines.push(`── Sensitive Paths Found (Historical) ──────────────────`);
+    d.sensitiveUrls.forEach((u: any) => {
+      lines.push(`  ⚠ [${u.date}] ${u.url}`);
+    });
+    lines.push(``);
+  } else {
+    lines.push(`✓ No sensitive paths found in historical index (first 500).`, ``);
+  }
+
+  if (d.allUrls?.length) {
+    lines.push(`── Recent Crawl Samples ──────────────────────────────`);
+    d.allUrls.forEach((u: any) => {
+      lines.push(`  • [${u.date}] ${u.url}`);
+    });
+  }
+
+  return lines.join("\n");
+}
+
 // Map command → pretty formatter (fallback = raw JSON)
 const FORMATTERS: Record<string, (d: any) => string> = {
   "headers-grade": fmtHeadersGrade,
@@ -205,6 +295,9 @@ const FORMATTERS: Record<string, (d: any) => string> = {
   cors: fmtCors,
   tech: fmtTech,
   inspect: fmtInspect,
+  subdomains: fmtSubdomains,
+  waf: fmtWaf,
+  wayback: fmtWayback,
 };
 
 // ── help text ────────────────────────────────────────────────────────────────
@@ -240,6 +333,11 @@ const HELP_TEXT = `
   help                    Show this help
   clear                   Clear the terminal
 
+── Admin Tools (Auth Required) ──────────────────────────────────
+  subdomains <domain>     Passive subdomain enumeration (crt.sh)
+  waf        <url>        WAF, CDN, and Proxy fingerprinting
+  wayback    <domain>    Find historical sensitive file exposures
+
 All commands only fetch publicly available data.
 No vulnerability exploitation or active scanning is performed.
 `.trim();
@@ -265,12 +363,13 @@ export default function Terminal({ userId }: { userId?: string }) {
         "inspect", "status", "headers", "seo", "links", "robots", "sitemap",
         "headers-grade", "tls", "cors", "exposures", "securitytxt",
         "tech", "dns",
+        "subdomains", "waf", "wayback",
       ]),
     []
   );
 
   // Commands that take a domain (not a URL)
-  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt"]), []);
+  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt", "subdomains", "wayback"]), []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -33,6 +33,15 @@ export default function NavBar({ user }: NavBarProps) {
                         Terminal
                     </Link>
 
+                    {/* Local Inspector link */}
+                    <Link
+                        href="/inspector"
+                        className={`text-sm px-3 py-1.5 rounded-md transition-colors ${pathname === "/inspector" ? "bg-zinc-800 text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
+                            }`}
+                    >
+                        Local Inspector
+                    </Link>
+
                     {/* Admin link — only visible to admins */}
                     {isAdmin && (
                         <Link

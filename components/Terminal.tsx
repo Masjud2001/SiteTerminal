@@ -442,6 +442,7 @@ const HELP_TEXT = `
 ── Terminal ─────────────────────────────────────────────────────
   help                    Show this help
   clear                   Clear the terminal
+  local                   Learn about the Windows Local Security Inspector
 
 ── Admin Tools (Auth Required) ──────────────────────────────────
   subdomains <domain>     Passive subdomain enumeration (crt.sh)
@@ -474,7 +475,7 @@ export default function Terminal({ userId }: { userId?: string }) {
   const commands = useMemo(
     () =>
       new Set([
-        "help", "clear",
+        "help", "clear", "local",
         "inspect", "status", "headers", "seo", "links", "robots", "sitemap",
         "headers-grade", "tls", "cors", "exposures", "securitytxt",
         "tech", "dns",
@@ -514,6 +515,23 @@ export default function Terminal({ userId }: { userId?: string }) {
 
     if (cmd === "help") {
       setOut((o) => [...o, { id: uid(), kind: "info", text: HELP_TEXT }]);
+      return;
+    }
+
+    if (cmd === "local") {
+      setOut((o) => [...o, {
+        id: uid(),
+        kind: "info",
+        text: `
+[Local Security Inspector]
+A premium Windows desktop companion for auditing local system health.
+Features: File Hashing, Process Signature Analysis, Registry Startup Audit, & Port Scanning.
+
+To learn more or download:
+Visit: /inspector
+Status: v1.0.0 Stable
+`.trim()
+      }]);
       return;
     }
 

@@ -1,0 +1,6 @@
+PyQt6
+psutil
+requests
+pywin32
+fpdf2
+python-dotenv

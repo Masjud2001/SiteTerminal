@@ -413,48 +413,53 @@ const FORMATTERS: Record<string, (d: any) => string> = {
 // ── help text ────────────────────────────────────────────────────────────────
 
 const HELP_TEXT = `
-╔══════════════════════════════════════════════════════════════╗
-║                 SiteTerminal — Command Reference             ║
-╚══════════════════════════════════════════════════════════════╝
-
-── Core Inspection ─────────────────────────────────────────────
-  inspect  <url>          Full site overview (status, SEO, tech, security)
-  status   <url>          HTTP status code & redirect chain
-  headers  <url>          Raw HTTP response headers + security audit
-  seo      <url>          Meta title, description, canonical, OG tags
-  links    <url>          All <a href> links on the page
-
-── Security Analysis ────────────────────────────────────────────
-  headers-grade <url>     Deep security header audit with grade (A–F)
-  tls           <domain>  TLS/SSL certificate audit — grade, expiry, weaknesses
-  cors          <url>     CORS misconfiguration check
-  exposures     <url>     Sensitive file & path exposure check (25 paths)
-  securitytxt   <domain>  Check for RFC 9116 security.txt
-
-── Technology ───────────────────────────────────────────────────
-  tech     <url>          Full tech fingerprint — 35+ patterns, outdated libs
-
-── DNS & Network ────────────────────────────────────────────────
-  dns      <domain>       DNS records (A, AAAA, MX, TXT, NS, CNAME)
-  robots   <url>          robots.txt content
-  sitemap  <url>          sitemap.xml content
-
-── Terminal ─────────────────────────────────────────────────────
-  help                    Show this help
-  clear                   Clear the terminal
-
-── Admin Tools (Auth Required) ──────────────────────────────────
-  subdomains <domain>     Passive subdomain enumeration (crt.sh)
-  waf-detect <url>        WAF, CDN, and Proxy fingerprinting
-  wayback    <domain>    Find historical sensitive file exposures
-  vulns      <url>        Check technology stack against CVE database
-  shodan     <domain>    Shodan host intelligence (ports, org, vuln)
-  breach     <domain>    Search for known domain-associated breaches
-  ssl-chain  <domain>    Validate full certificate chain integrity
-  open-ports <domain>    Check for common open service ports
-
-All commands only fetch publicly available data.
-No vulnerability exploitation or active scanning is performed.
+[ ACCESS_GRANTED ] ══════════════════════════════════════════════════
+ 
+ > CORE_MODULES
+ ---------------------------------------------------------------------
+  inspect    <url>      FULL SYSTEM AUDIT (STATUS/SEO/TECH/SEC)
+  status     <url>      HTTP STATE & REDIRECT_MAP
+  headers    <url>      RAW_HEADER_STREAM + SECURITY_AUDIT
+  seo        <url>      METADATA_EXTRACTOR (OG/META/CANONICAL)
+  links      <url>      NAV_MAP_CRAWLER
+ 
+ > SECURITY_VULN_SCAN
+ ---------------------------------------------------------------------
+  headers-grade <url>   DEEP_SEC_AUDIT (GRADE: A-F)
+  tls           <dom>   SSL_CERT_VALIDATOR (EXPIRY/WEAKNESS)
+  cors          <url>   CROSS_ORIGIN_POL_CHECK
+  exposures     <url>   SENSITIVE_PATH_DISCOVERY
+  securitytxt   <dom>   RFC_9116_CHECK
+ 
+ > TECH_STACK
+ ---------------------------------------------------------------------
+  tech       <url>      FINGERPRINT_DATABASE (35+ PATTERNS)
+ 
+ > NETWORK_RECON
+ ---------------------------------------------------------------------
+  dns        <dom>      DNS_RESOLVER (A/MX/TXT/NS)
+  robots     <url>      CRAWL_RULES (ROBOTS_TXT)
+  sitemap    <url>      SITE_MAP_STREAM
+ 
+ > ADMIN_PROTOCOL (AUTH_REQ)
+ ---------------------------------------------------------------------
+  subdomains <dom>      CERT_TRANSPARENCY_ENUM
+  waf-detect <url>      FIREWALL_FINGERPRINT
+  wayback    <dom>      HISTORICAL_PATH_EXPOSURE
+  vulns      <url>      CVE_TECH_CROSSREF
+  shodan     <dom>      HOST_INTEL (PORTS/ORG)
+  breach     <dom>      HIBP_DOMAIN_SCAN
+  ssl-chain  <dom>      CHAIN_INTEGRITY_AUDIT
+  open-ports <dom>      SERVICE_PORT_DISCOVERY
+ 
+ > SYSTEM
+ ---------------------------------------------------------------------
+  help                  DISPLAY_THIS_MAP
+  clear                 WIPE_BUFFER
+ 
+ ---------------------------------------------------------------------
+ [!!] PASSIVE_MODE: ACTIVE // NO_PROBING_DETECTED
+ ---------------------------------------------------------------------
 `.trim();
 
 // ── Terminal component ───────────────────────────────────────────────────────
@@ -465,7 +470,20 @@ export default function Terminal({ userId }: { userId?: string }) {
   const [histIdx, setHistIdx] = useState<number>(-1);
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<OutputItem[]>(() => [
-    { id: uid(), kind: "info", text: "SiteTerminal ready. Type `help` to see all commands." },
+    {
+      id: uid(),
+      kind: "info",
+      text: `
+ ██████╗██╗████████╗███████╗████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗     
+██╔════╝██║╚══██╔══╝██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║     
+╚█████╗ ██║   ██║   █████╗     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║     
+ ╚═══██╗██║   ██║   ██╔══╝     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║     
+██████╔╝██║   ██║   ███████╗   ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗
+╚═════╝ ╚═╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
+                                                                                          
+SITE-TERMINAL v2.0 // CORE_INIT: SUCCESS // TYPE 'HELP' FOR COMMANDS
+`
+    },
   ]);
 
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -518,7 +536,20 @@ export default function Terminal({ userId }: { userId?: string }) {
     }
 
     if (cmd === "clear") {
-      setOut([{ id: uid(), kind: "info", text: "SiteTerminal ready. Type `help` to see all commands." }]);
+      setOut([{
+        id: uid(),
+        kind: "info",
+        text: `
+ ██████╗██╗████████╗███████╗████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗     
+██╔════╝██║╚══██╔══╝██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║     
+╚█████╗ ██║   ██║   █████╗     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║     
+ ╚═══██╗██║   ██║   ██╔══╝     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║     
+██████╔╝██║   ██║   ███████╗   ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗
+╚═════╝ ╚═╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
+                                                                                          
+SITE-TERMINAL v2.0 // CORE_INIT: SUCCESS // TYPE 'HELP' FOR COMMANDS
+`
+      }]);
       return;
     }
 
@@ -620,65 +651,68 @@ export default function Terminal({ userId }: { userId?: string }) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="rounded-xl border border-zinc-800 bg-black shadow-lg">
+    <div className="w-full max-w-4xl mx-auto px-4 md:px-0">
+      <div className="crt-container flicker border border-emerald-900/40 shadow-[0_0_50px_rgba(0,255,65,0.15)] relative">
+        <div className="scanlines" />
+
         {/* Title bar */}
-        <div className="px-4 py-3 border-b border-zinc-900 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500 opacity-80" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-80" />
-              <div className="w-3 h-3 rounded-full bg-green-500 opacity-80" />
+        <div className="px-5 py-4 border-b border-emerald-900/20 flex items-center justify-between bg-emerald-950/20 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-900 animate-pulse" />
+              <div className="w-3 h-3 rounded-full bg-emerald-800" />
             </div>
-            <div className="text-zinc-200 font-mono text-sm">SiteTerminal</div>
+            <div className="text-emerald-400 font-terminal text-lg tracking-widest glow-text">SHODAN-OS // SITE-TERMINAL v2.0</div>
           </div>
-          <div className="text-zinc-500 text-xs">Public data only • No exploitation</div>
+          <div className="text-emerald-900 font-terminal text-sm hidden sm:block">SYS_AUTH: ADMIN // ENCRYPTION: AES-256</div>
         </div>
 
         {/* Output */}
-        <div className="p-4 h-[70vh] overflow-y-auto font-mono text-sm">
+        <div className="p-6 h-[72vh] overflow-y-auto font-terminal text-xl crt-curve">
           {out.map((item) => (
             <pre
               key={item.id}
-              className={
-                item.kind === "command"
-                  ? "text-zinc-200"
-                  : item.kind === "error"
-                    ? "text-red-400"
-                    : item.kind === "info"
-                      ? "text-emerald-300"
-                      : "text-emerald-200"
-              }
-              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", marginBottom: "0.5rem" }}
+              className={`glow-text ${item.kind === "command"
+                ? "text-zinc-100 opacity-90"
+                : item.kind === "error"
+                  ? "text-red-500"
+                  : item.kind === "info"
+                    ? "text-emerald-400"
+                    : "text-emerald-300"
+                }`}
+              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", marginBottom: "1rem" }}
             >
               {item.text}
             </pre>
           ))}
 
           {busy && (
-            <div className="flex items-center gap-2 text-zinc-400">
-              <span className="animate-pulse">▋</span>
-              <span>running…</span>
+            <div className="flex items-center gap-3 text-emerald-500 font-terminal text-xl glow-text">
+              <span className="animate-bounce">_</span>
+              <span className="animate-pulse">PROCESSING DATA...</span>
             </div>
           )}
           <div ref={endRef} />
         </div>
 
-        {/* Input */}
-        <div className="px-4 py-3 border-t border-zinc-900 flex items-center gap-2 font-mono">
-          <span className="text-zinc-300 shrink-0">{PROMPT}</span>
+        {/* Input area */}
+        <div className="px-6 py-4 border-t border-emerald-900/20 flex items-center gap-3 font-terminal text-xl bg-emerald-950/10">
+          <span className="text-emerald-600 shrink-0 glow-text">{PROMPT}</span>
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            className="flex-1 bg-transparent outline-none text-emerald-200 placeholder:text-zinc-700"
-            placeholder="help"
+            className="flex-1 bg-transparent outline-none text-emerald-400 placeholder:text-emerald-900/50 glow-text"
+            placeholder="ENTER COMMAND"
             spellCheck={false}
             autoCapitalize="none"
             autoCorrect="off"
           />
         </div>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-emerald-900 font-terminal text-sm uppercase tracking-[0.2em]">Authorized Personnel Only // Private Security Suite</p>
       </div>
     </div>
   );

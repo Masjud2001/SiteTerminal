@@ -620,8 +620,8 @@ export default function Terminal({ userId }: { userId?: string }) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="rounded-xl border border-zinc-800 bg-black shadow-lg">
+    <div className="w-full max-w-4xl mx-auto px-4 md:px-0">
+      <div className="rounded-xl border border-zinc-800/50 bg-black/80 backdrop-blur-md shadow-2xl overflow-hidden">
         {/* Title bar */}
         <div className="px-4 py-3 border-b border-zinc-900 flex items-center justify-between">
           <div className="flex items-center gap-3">

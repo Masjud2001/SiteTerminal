@@ -25,12 +25,18 @@ type SearchRow = {
     user: { email: string; name: string | null };
 };
 
+type FullSearchData = SearchRow & {
+    resultJson: string;
+};
+
 export default function AdminDashboard() {
     const [users, setUsers] = useState<UserRow[]>([]);
     const [stats, setStats] = useState<StatsData | null>(null);
     const [searches, setSearches] = useState<SearchRow[]>([]);
+    const [selectedSearch, setSelectedSearch] = useState<FullSearchData | null>(null);
     const [tab, setTab] = useState<"overview" | "users" | "logs" | "searches">("overview");
     const [loading, setLoading] = useState(true);
+    const [detailsLoading, setDetailsLoading] = useState(false);
     const [msg, setMsg] = useState("");
 
     async function load() {
@@ -75,6 +81,64 @@ export default function AdminDashboard() {
         if (data.ok) { setMsg("User deleted."); load(); }
         else setMsg(data.error);
         setTimeout(() => setMsg(""), 3000);
+    }
+
+    async function viewDetails(id: number) {
+        setDetailsLoading(true);
+        try {
+            const res = await fetch(`/api/admin/searches/${id}`);
+            const data = await res.json();
+            if (data.ok) setSelectedSearch(data.search);
+            else alert(data.error);
+        } catch (e) {
+            alert("Failed to load details.");
+        }
+        setDetailsLoading(false);
+    }
+
+    function exportSingle(search: any, format: "csv" | "json") {
+        let content = "";
+        let filename = `search-${search.uid}.${format}`;
+        let type = "";
+
+        if (format === "json") {
+            content = JSON.stringify(search, null, 2);
+            type = "application/json";
+        } else {
+            // Simple CSV for single record
+            const headers = ["UID", "User", "Command", "Target", "Timestamp", "Result"];
+            const rows = [[
+                search.uid,
+                search.user.email,
+                search.command,
+                search.target,
+                search.createdAt,
+                JSON.stringify(search.resultJson)
+            ]];
+            content = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+            type = "text/csv";
+        }
+
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async function fetchAndExport(id: number, format: "csv" | "json") {
+        setDetailsLoading(true);
+        try {
+            const res = await fetch(`/api/admin/searches/${id}`);
+            const data = await res.json();
+            if (data.ok) exportSingle(data.search, format);
+            else alert(data.error);
+        } catch (e) {
+            alert("Export failed.");
+        }
+        setDetailsLoading(false);
     }
 
     const tabClass = (t: string) =>
@@ -308,6 +372,7 @@ export default function AdminDashboard() {
                                             <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Command</th>
                                             <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Target</th>
                                             <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3 hidden md:table-cell">Time</th>
+                                            <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -327,6 +392,22 @@ export default function AdminDashboard() {
                                                         hour: "2-digit", minute: "2-digit",
                                                     })}
                                                 </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => viewDetails(s.id)}
+                                                            className="text-[10px] px-2 py-1 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 transition-colors"
+                                                        >
+                                                            View Result
+                                                        </button>
+                                                        <button
+                                                            onClick={() => fetchAndExport(s.id, "csv")}
+                                                            className="text-[10px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                                                        >
+                                                            CSV
+                                                        </button>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))}
                                         {searches.length === 0 && (
@@ -342,6 +423,51 @@ export default function AdminDashboard() {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* Modal for Details */}
+            {selectedSearch && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+                        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+                            <div>
+                                <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-3">
+                                    <span className="text-emerald-400 font-mono text-base bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{selectedSearch.uid}</span>
+                                    {selectedSearch.command} {selectedSearch.target}
+                                </h2>
+                                <p className="text-xs text-zinc-500 mt-1">
+                                    Searched by {selectedSearch.user.email} on {new Date(selectedSearch.createdAt).toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => exportSingle(selectedSearch, "json")}
+                                    className="px-4 py-2 text-xs rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 transition-colors"
+                                >
+                                    Export JSON
+                                </button>
+                                <button
+                                    onClick={() => setSelectedSearch(null)}
+                                    className="px-4 py-2 text-xs rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-auto p-6 bg-black/20 font-mono text-sm">
+                            <pre className="text-emerald-400/90 leading-relaxed">
+                                {JSON.stringify(JSON.parse(selectedSearch.resultJson), null, 2)}
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {detailsLoading && (
+                <div className="fixed top-4 right-4 z-[60] bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg text-xs text-zinc-400 flex items-center gap-2 shadow-xl">
+                    <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    Fetching full result...
+                </div>
             )}
         </div>
     );

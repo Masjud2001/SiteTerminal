@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceRateLimit, requireDomainParam } from "@/lib/apiGuards";
 import { getCache, setCache } from "@/lib/cache";
-import { getTlsInfo } from "@/lib/tlsUtils";
+import { auditTls } from "@/lib/tlsAudit";
 import { assertSafeHostname } from "@/lib/ssrfProtection";
 
 export async function GET(req: NextRequest) {
@@ -16,19 +16,9 @@ export async function GET(req: NextRequest) {
 
     await assertSafeHostname(domain);
 
-    const cert = await getTlsInfo(domain, 443);
+    const audit = await auditTls(domain, 443);
 
-    const body = {
-      ok: true,
-      domain,
-      servername: domain,
-      port: 443,
-      subject: cert?.subject,
-      issuer: cert?.issuer,
-      valid_from: cert?.valid_from,
-      valid_to: cert?.valid_to,
-      subjectaltname: cert?.subjectaltname,
-    };
+    const body = { ok: true, ...audit };
 
     setCache(key, body, 10 * 60_000);
     return NextResponse.json(body);

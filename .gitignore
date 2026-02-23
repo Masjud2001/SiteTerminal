@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Environment variables (contain secrets)
+.env
+.env.local
+.env.*.local
+
+# Database files (local dev only)
+prisma/dev.db
+prisma/dev.db-journal
+*.db
+*.db-journal
+
+# Prisma generated (regenerated via prisma generate)
+# Keep schema.prisma tracked but not generated client overrides
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+*.swp
+*.swo
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

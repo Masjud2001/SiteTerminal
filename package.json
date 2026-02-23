@@ -9,9 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.0.0-rc.12",
     "ipaddr.js": "^2.2.0",
     "next": "14.2.5",
+    "next-auth": "^4.24.13",
+    "prisma": "^5.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

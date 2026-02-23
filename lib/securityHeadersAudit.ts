@@ -1,20 +1,14 @@
-const CHECKS = [
-  "content-security-policy",
-  "strict-transport-security",
-  "x-frame-options",
-  "x-content-type-options",
-  "referrer-policy",
-  "permissions-policy",
-] as const;
+// Backward-compat shim — delegates to the full grading engine.
+// Used by the /headers route to keep a simple securityAudit field.
+import { gradeSecurityHeaders } from "./securityGrade";
 
 export function auditSecurityHeaders(headers: Record<string, string>) {
-  const checks = CHECKS.map((name) => {
-    const v = headers[name] ?? headers[name.toLowerCase()];
-    return { name, present: Boolean(v), value: v };
-  });
-
-  const presentCount = checks.filter((c) => c.present).length;
-  const score = Math.round((presentCount / CHECKS.length) * 100);
-
-  return { score, checks };
+  const result = gradeSecurityHeaders(headers);
+  return {
+    score: result.score,
+    grade: result.grade,
+    checks: result.checks.map((c) => ({ name: c.name, present: c.present, value: c.value, passed: c.passed })),
+    issues: result.issues,
+  };
 }
+

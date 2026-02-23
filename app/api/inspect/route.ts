@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceRateLimit, requireUrlParam } from "@/lib/apiGuards";
 import { fetchTextWithLimits } from "@/lib/fetchWithLimit";
-import { auditSecurityHeaders } from "@/lib/securityHeadersAudit";
+import { gradeSecurityHeaders } from "@/lib/securityGrade";
+import { detectTechnologies } from "@/lib/techFingerprint";
 import { getCache, setCache } from "@/lib/cache";
 import * as cheerio from "cheerio";
-
-function techHints(html: string, headers: Record<string, string>): string[] {
-  const hints = new Set<string>();
-
-  const server = headers["server"];
-  if (server) hints.add(`server:${server}`);
-
-  const powered = headers["x-powered-by"];
-  if (powered) hints.add(`powered:${powered}`);
-
-  if (/wp-content|wp-includes/i.test(html)) hints.add("wordpress");
-  if (/__NEXT_DATA__/i.test(html)) hints.add("nextjs");
-  if (/cdn\.shopify\.com/i.test(html)) hints.add("shopify");
-
-  return Array.from(hints).slice(0, 10);
-}
 
 export async function GET(req: NextRequest) {
   const rl = enforceRateLimit(req);
@@ -35,7 +20,8 @@ export async function GET(req: NextRequest) {
     const headersObj: Record<string, string> = {};
     res.headers.forEach((v, k) => (headersObj[k.toLowerCase()] = v));
 
-    const securityAudit = auditSecurityHeaders(headersObj);
+    const securityGrade = gradeSecurityHeaders(headersObj);
+    const technologies = detectTechnologies(res.bodyText, headersObj);
 
     const $ = cheerio.load(res.bodyText);
     const title = $("title").first().text().trim() || null;
@@ -43,6 +29,9 @@ export async function GET(req: NextRequest) {
 
     let linkCount = 0;
     $("a[href]").each(() => { linkCount++; });
+
+    // Directory listing detection
+    const dirListing = /Index of\/|Parent Directory|\[DIR\]/i.test(res.bodyText);
 
     const body = {
       ok: true,
@@ -54,8 +43,12 @@ export async function GET(req: NextRequest) {
       title,
       metaDescription,
       linkCount,
-      securityAudit,
-      techHints: techHints(res.bodyText, headersObj),
+      dirListingDetected: dirListing,
+      securityScore: securityGrade.score,
+      securityGrade: securityGrade.grade,
+      securityIssueCount: securityGrade.issues.length,
+      technologies,
+      outdatedLibraries: technologies.filter((t) => t.outdated),
     };
 
     setCache(key, body, 10 * 60_000);

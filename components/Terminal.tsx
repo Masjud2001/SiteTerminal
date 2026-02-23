@@ -352,6 +352,45 @@ function fmtWayback(d: any): string {
   return lines.join("\n");
 }
 
+function fmtSslChain(d: any): string {
+  const lines: string[] = [
+    `SSL/TLS Certificate Chain — ${d.domain}`,
+    `Protocol: ${d.protocol}`,
+    `Cipher:   ${d.cipher.name} (${d.cipher.version})`,
+    `Status:   ${d.authorized ? "✓ Valid Chain" : "✗ Unauthorized (" + d.authorizationError + ")"}`,
+    ``,
+  ];
+
+  d.chain.forEach((c: any, i: number) => {
+    lines.push(`── Certificate ${i} ─────────────────────────────────────`);
+    lines.push(`  Subject: ${c.subject.CN || "Unknown"}`);
+    lines.push(`  Issuer:  ${c.issuer.CN || "Unknown"}`);
+    lines.push(`  Valid:   ${new Date(c.valid_from).toLocaleDateString()} to ${new Date(c.valid_to).toLocaleDateString()}`);
+    lines.push(`  Serial:  ${c.serialNumber}`);
+    lines.push(``);
+  });
+
+  return lines.join("\n");
+}
+
+function fmtOpenPorts(d: any): string {
+  const lines: string[] = [
+    `Port Discovery — ${d.domain}`,
+    `Total Checked: ${d.totalChecked} ports`,
+    `Found Open:    ${d.openCount}`,
+    ``,
+    `── Service Check ──────────────────────────────────────`,
+  ];
+
+  d.ports.forEach((p: any) => {
+    const status = p.open ? "○ OPEN  " : "  closed";
+    const color = p.open ? "emerald" : "zinc"; // Logical mapping for potential future styling
+    lines.push(`  ${p.port.toString().padEnd(5)} ${p.service.padEnd(12)} [${status}]`);
+  });
+
+  return lines.join("\n");
+}
+
 // Map command → pretty formatter (fallback = raw JSON)
 const FORMATTERS: Record<string, (d: any) => string> = {
   "headers-grade": fmtHeadersGrade,
@@ -362,11 +401,13 @@ const FORMATTERS: Record<string, (d: any) => string> = {
   tech: fmtTech,
   inspect: fmtInspect,
   subdomains: fmtSubdomains,
-  waf: fmtWaf,
+  "waf-detect": fmtWaf,
   wayback: fmtWayback,
   vulns: fmtVulns,
   shodan: fmtShodan,
   breach: fmtBreach,
+  "ssl-chain": fmtSslChain,
+  "open-ports": fmtOpenPorts,
 };
 
 // ── help text ────────────────────────────────────────────────────────────────
@@ -404,11 +445,13 @@ const HELP_TEXT = `
 
 ── Admin Tools (Auth Required) ──────────────────────────────────
   subdomains <domain>     Passive subdomain enumeration (crt.sh)
-  waf        <url>        WAF, CDN, and Proxy fingerprinting
+  waf-detect <url>        WAF, CDN, and Proxy fingerprinting
   wayback    <domain>    Find historical sensitive file exposures
   vulns      <url>        Check technology stack against CVE database
   shodan     <domain>    Shodan host intelligence (ports, org, vuln)
   breach     <domain>    Search for known domain-associated breaches
+  ssl-chain  <domain>    Validate full certificate chain integrity
+  open-ports <domain>    Check for common open service ports
 
 All commands only fetch publicly available data.
 No vulnerability exploitation or active scanning is performed.
@@ -435,14 +478,15 @@ export default function Terminal({ userId }: { userId?: string }) {
         "inspect", "status", "headers", "seo", "links", "robots", "sitemap",
         "headers-grade", "tls", "cors", "exposures", "securitytxt",
         "tech", "dns",
-        "subdomains", "waf", "wayback",
+        "subdomains", "waf-detect", "wayback",
         "vulns", "shodan", "breach",
+        "ssl-chain", "open-ports",
       ]),
     []
   );
 
   // Commands that take a domain (not a URL)
-  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt", "subdomains", "wayback", "shodan", "breach"]), []);
+  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt", "subdomains", "wayback", "shodan", "breach", "ssl-chain", "open-ports"]), []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

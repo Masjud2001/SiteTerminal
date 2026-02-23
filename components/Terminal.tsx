@@ -196,6 +196,72 @@ function fmtInspect(d: any): string {
   return lines.join("\n");
 }
 
+function fmtVulns(d: any): string {
+  const lines: string[] = [
+    `CVE Vulnerability Audit — ${d.target}`,
+    `Technologies identified: ${d.techs.join(", ") || "None"}`,
+    ``,
+  ];
+
+  if (d.vulnerabilities?.length) {
+    for (const vGroup of d.vulnerabilities) {
+      lines.push(`── ${vGroup.technology} ─────────────────────────────────`);
+      vGroup.findings.forEach((f: any) => {
+        const severity = f.cvss ? `[CVSS ${f.cvss}]` : "[INFO]";
+        lines.push(`  ⚠ ${severity} ${f.id}`);
+        lines.push(`    ${f.summary.slice(0, 100)}...`);
+      });
+      lines.push(``);
+    }
+  } else {
+    lines.push(d.message || `✓ No known CVEs found for the identified tech stack in recent database records.`);
+  }
+
+  return lines.join("\n");
+}
+
+function fmtShodan(d: any): string {
+  const lines: string[] = [
+    `Shodan Intelligence — ${d.ip}`,
+    `Organization: ${d.org || "Unknown"}`,
+    `ISP:          ${d.isp || "Unknown"}`,
+    `Location:     ${d.location.city}, ${d.location.country}`,
+    `OS:           ${d.os || "Unknown"}`,
+    ``,
+    `Open Ports:   ${d.ports.join(", ") || "None found"}`,
+  ];
+
+  if (d.vulns?.length) {
+    lines.push(``, `── Vulnerabilities ─────────────────────────────────────`);
+    d.vulns.forEach((v: string) => lines.push(`  ⚠ ${v}`));
+  }
+
+  if (d.tags?.length) {
+    lines.push(``, `Tags: ${d.tags.join(", ")}`);
+  }
+
+  return lines.join("\n");
+}
+
+function fmtBreach(d: any): string {
+  const lines: string[] = [
+    `Domain Breach Audit — ${d.domain}`,
+    ``,
+  ];
+
+  if (d.breaches?.length) {
+    lines.push(`── Known Breaches ──────────────────────────────────────`);
+    d.breaches.forEach((b: any) => {
+      lines.push(`  ⚠ ${b.Title} (${b.BreachDate})`);
+      lines.push(`    Data: ${b.DataClasses.join(", ")}`);
+    });
+  } else {
+    lines.push(d.message || `✓ No public breach data found for this domain.`);
+  }
+
+  return lines.join("\n");
+}
+
 function fmtSubdomains(d: any): string {
   const lines: string[] = [
     `Subdomain Enumeration — ${d.domain}`,
@@ -298,6 +364,9 @@ const FORMATTERS: Record<string, (d: any) => string> = {
   subdomains: fmtSubdomains,
   waf: fmtWaf,
   wayback: fmtWayback,
+  vulns: fmtVulns,
+  shodan: fmtShodan,
+  breach: fmtBreach,
 };
 
 // ── help text ────────────────────────────────────────────────────────────────
@@ -337,6 +406,9 @@ const HELP_TEXT = `
   subdomains <domain>     Passive subdomain enumeration (crt.sh)
   waf        <url>        WAF, CDN, and Proxy fingerprinting
   wayback    <domain>    Find historical sensitive file exposures
+  vulns      <url>        Check technology stack against CVE database
+  shodan     <domain>    Shodan host intelligence (ports, org, vuln)
+  breach     <domain>    Search for known domain-associated breaches
 
 All commands only fetch publicly available data.
 No vulnerability exploitation or active scanning is performed.
@@ -364,12 +436,13 @@ export default function Terminal({ userId }: { userId?: string }) {
         "headers-grade", "tls", "cors", "exposures", "securitytxt",
         "tech", "dns",
         "subdomains", "waf", "wayback",
+        "vulns", "shodan", "breach",
       ]),
     []
   );
 
   // Commands that take a domain (not a URL)
-  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt", "subdomains", "wayback"]), []);
+  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt", "subdomains", "wayback", "shodan", "breach"]), []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

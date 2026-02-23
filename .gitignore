@@ -1,38 +1,58 @@
-# Dependencies
+# ─── Dependencies ────────────────────────────────────────────
 node_modules/
 
-# Next.js build output
+# ─── Environment / Secrets ───────────────────────────────────
+# NEVER commit .env files — they contain secrets
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+*.env
+
+# ─── Database ────────────────────────────────────────────────
+prisma/dev.db
+prisma/dev.db-journal
+prisma/dev.db-shm
+prisma/dev.db-wal
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ─── Next.js ─────────────────────────────────────────────────
 .next/
 out/
 
-# Environment variables (contain secrets)
-.env
-.env.local
-.env.*.local
+# ─── Build artifacts ─────────────────────────────────────────
+dist/
+build/
 
-# Database files (local dev only)
-prisma/dev.db
-prisma/dev.db-journal
-*.db
-*.db-journal
+# ─── TypeScript ──────────────────────────────────────────────
+next-env.d.ts
+*.tsbuildinfo
 
-# Prisma generated (regenerated via prisma generate)
-# Keep schema.prisma tracked but not generated client overrides
-
-# OS
+# ─── Editor & OS ─────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-
-# Editor
 .vscode/settings.json
+.idea/
 *.swp
 *.swo
 
-# TypeScript build info
-*.tsbuildinfo
-next-env.d.ts
-
-# Logs
+# ─── Logs ────────────────────────────────────────────────────
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
+
+# ─── Misc temp files ─────────────────────────────────────────
+*.orig
+*.bak
+.git/COMMIT_MSG_TEMP

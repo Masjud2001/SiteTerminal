@@ -3,115 +3,169 @@
 @tailwind utilities;
 
 :root {
-  --color-terminal-bg: #050505;
-  --color-terminal-green: #00ff41;
-  --color-terminal-green-dim: #008f11;
-  --color-terminal-green-glow: rgba(0, 255, 65, 0.3);
-  --color-terminal-scanline: rgba(18, 16, 16, 0.1);
+    --color-terminal-bg: #050505;
+    --color-terminal-green: #00ff41;
+    --color-terminal-green-dim: #008f11;
+    --color-terminal-green-glow: rgba(0, 255, 65, 0.3);
+    --color-terminal-scanline: rgba(18, 16, 16, 0.1);
 }
 
 @layer base {
-  body {
-    @apply bg-black text-[#00ff41] font-mono selection:bg-[#00ff41] selection:text-black;
-    background-color: var(--color-terminal-bg);
-    overflow-x: hidden;
-  }
+    body {
+        @apply bg-black text-[#00ff41] font-mono selection:bg-[#00ff41] selection:text-black;
+        background-color: var(--color-terminal-bg);
+        overflow-x: hidden;
+    }
 }
 
 @layer components {
-  .glow-text {
-    text-shadow: 0 0 10px var(--color-terminal-green-glow), 0 0 20px var(--color-terminal-green-glow);
-  }
+    .glow-text {
+        text-shadow: 0 0 10px var(--color-terminal-green-glow), 0 0 20px var(--color-terminal-green-glow);
+    }
 
-  .terminal-border {
-    @apply border border-[#008f11]/30;
-    box-shadow: 0 0 15px rgba(0, 143, 17, 0.1);
-  }
+    .terminal-border {
+        @apply border border-[#008f11]/30;
+        box-shadow: 0 0 15px rgba(0, 143, 17, 0.1);
+    }
 
-  .scanline {
-    width: 100%;
-    height: 2px;
-    z-index: 100;
-    background: var(--color-terminal-scanline);
-    opacity: 0.75;
-    position: fixed;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    animation: scanline 6s linear infinite;
-  }
+    .scanline {
+        width: 100%;
+        height: 2px;
+        z-index: 100;
+        background: var(--color-terminal-scanline);
+        opacity: 0.75;
+        position: fixed;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        animation: scanline 6s linear infinite;
+    }
 
-  .terminal-grid {
-    background-image: linear-gradient(var(--color-terminal-green-dim) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-terminal-green-dim) 1px, transparent 1px);
-    background-size: 50px 50px;
-    background-position: center;
-    opacity: 0.05;
-  }
+    .terminal-grid {
+        background-image: linear-gradient(var(--color-terminal-green-dim) 1px, transparent 1px),
+            linear-gradient(90deg, var(--color-terminal-green-dim) 1px, transparent 1px);
+        background-size: 50px 50px;
+        background-position: center;
+        opacity: 0.05;
+    }
 
-  .glitch {
-    position: relative;
-    display: inline-block;
-  }
+    .glitch {
+        position: relative;
+        display: inline-block;
+    }
 
-  .glitch::before,
-  .glitch::after {
-    content: attr(data-text);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: black;
-  }
+    .glitch::before,
+    .glitch::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+    }
 
-  .glitch::before {
-    left: 2px;
-    text-shadow: -2px 0 #ff00c1;
-    clip: rect(44px, 450px, 56px, 0);
-    animation: glitch-anim 5s infinite linear alternate-reverse;
-  }
+    .glitch::before {
+        left: 2px;
+        text-shadow: -2px 0 #ff00c1;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim 5s infinite linear alternate-reverse;
+    }
 
-  .glitch::after {
-    left: -2px;
-    text-shadow: -2px 0 #00fff9, 2px 2px #ff00c1;
-    animation: glitch-anim2 1s infinite linear alternate-reverse;
-  }
+    .glitch::after {
+        left: -2px;
+        text-shadow: -2px 0 #00fff9, 2px 2px #ff00c1;
+        animation: glitch-anim2 1s infinite linear alternate-reverse;
+    }
 }
 
 @keyframes scanline {
-  0% { top: 0; }
-  100% { top: 100%; }
+    0% {
+        top: 0;
+    }
+
+    100% {
+        top: 100%;
+    }
 }
 
 @keyframes glitch-anim {
-  0% { clip: rect(31px, 9999px, 94px, 0); }
-  20% { clip: rect(62px, 9999px, 42px, 0); }
-  40% { clip: rect(16px, 9999px, 78px, 0); }
-  60% { clip: rect(56px, 9999px, 32px, 0); }
-  80% { clip: rect(95px, 9999px, 12px, 0); }
-  100% { clip: rect(23px, 9999px, 64px, 0); }
+    0% {
+        clip: rect(31px, 9999px, 94px, 0);
+    }
+
+    20% {
+        clip: rect(62px, 9999px, 42px, 0);
+    }
+
+    40% {
+        clip: rect(16px, 9999px, 78px, 0);
+    }
+
+    60% {
+        clip: rect(56px, 9999px, 32px, 0);
+    }
+
+    80% {
+        clip: rect(95px, 9999px, 12px, 0);
+    }
+
+    100% {
+        clip: rect(23px, 9999px, 64px, 0);
+    }
 }
 
 @keyframes glitch-anim2 {
-  0% { clip: rect(65px, 9999px, 100px, 0); }
-  20% { clip: rect(12px, 9999px, 53px, 0); }
-  40% { clip: rect(98px, 9999px, 84px, 0); }
-  60% { clip: rect(41px, 9999px, 12px, 0); }
-  80% { clip: rect(74px, 9999px, 32px, 0); }
-  100% { clip: rect(2px, 9999px, 91px, 0); }
+    0% {
+        clip: rect(65px, 9999px, 100px, 0);
+    }
+
+    20% {
+        clip: rect(12px, 9999px, 53px, 0);
+    }
+
+    40% {
+        clip: rect(98px, 9999px, 84px, 0);
+    }
+
+    60% {
+        clip: rect(41px, 9999px, 12px, 0);
+    }
+
+    80% {
+        clip: rect(74px, 9999px, 32px, 0);
+    }
+
+    100% {
+        clip: rect(2px, 9999px, 91px, 0);
+    }
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #050505;
+    background: #050505;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--color-terminal-green-dim);
+    background: var(--color-terminal-green-dim);
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-terminal-green);
+    background: var(--color-terminal-green);
 }

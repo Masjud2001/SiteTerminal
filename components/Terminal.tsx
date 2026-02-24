@@ -747,60 +747,60 @@ Status: v1.0.0 Stable
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="rounded-xl border border-zinc-800 bg-black shadow-lg">
+    <div className="w-full mx-auto">
+      <div className="rounded-sm border border-[#00ff41]/20 bg-black/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,255,65,0.05)]">
         {/* Title bar */}
-        <div className="px-4 py-3 border-b border-zinc-900 flex items-center justify-between">
+        <div className="px-4 py-2 border-b border-[#00ff41]/10 flex items-center justify-between bg-[#00ff41]/5">
           <div className="flex items-center gap-3">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500 opacity-80" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-80" />
-              <div className="w-3 h-3 rounded-full bg-green-500 opacity-80" />
+            <div className="flex gap-1.5 opacity-50">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
             </div>
-            <div className="text-zinc-200 font-mono text-sm">SiteTerminal</div>
+            <div className="text-[#00ff41]/70 font-mono text-[10px] uppercase tracking-[0.2em]">System.Terminal.Main</div>
           </div>
-          <div className="text-zinc-500 text-xs">Public data only • No exploitation</div>
+          <div className="text-[#00ff41]/30 text-[10px] uppercase font-mono tracking-widest">v2.0.4-STABLE</div>
         </div>
 
         {/* Output */}
-        <div className="p-4 h-[70vh] overflow-y-auto font-mono text-sm">
+        <div className="p-5 h-[65vh] overflow-y-auto font-mono text-sm custom-scrollbar">
           {out.map((item) => (
             <pre
               key={item.id}
               className={
                 item.kind === "command"
-                  ? "text-zinc-200"
+                  ? "text-[#00ff41]/90 font-bold"
                   : item.kind === "error"
-                    ? "text-red-400"
+                    ? "text-red-500 bg-red-500/5 px-1"
                     : item.kind === "info"
-                      ? "text-emerald-300"
-                      : "text-emerald-200"
+                      ? "text-[#00ff41] brightness-125 glow-text"
+                      : "text-[#00ff41]/80"
               }
-              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", marginBottom: "0.5rem" }}
+              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", marginBottom: "0.75rem" }}
             >
               {item.text}
             </pre>
           ))}
 
           {busy && (
-            <div className="flex items-center gap-2 text-zinc-400">
-              <span className="animate-pulse">▋</span>
-              <span>running…</span>
+            <div className="flex items-center gap-2 text-[#00ff41]/50 animate-pulse">
+              <span>▋</span>
+              <span className="text-[10px] uppercase tracking-widest">Executing process…</span>
             </div>
           )}
           <div ref={endRef} />
         </div>
 
         {/* Input */}
-        <div className="px-4 py-3 border-t border-zinc-900 flex items-center gap-2 font-mono">
-          <span className="text-zinc-300 shrink-0">{PROMPT}</span>
+        <div className="px-4 py-4 border-t border-[#00ff41]/10 flex items-center gap-3 font-mono bg-[#00ff41]/5">
+          <span className="text-[#00ff41] glow-text shrink-0">{PROMPT}</span>
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            className="flex-1 bg-transparent outline-none text-emerald-200 placeholder:text-zinc-700"
-            placeholder="help"
+            className="flex-1 bg-transparent outline-none text-[#00ff41] placeholder:text-[#00ff41]/20 caret-[#00ff41]"
+            placeholder="enter command..."
             spellCheck={false}
             autoCapitalize="none"
             autoCorrect="off"

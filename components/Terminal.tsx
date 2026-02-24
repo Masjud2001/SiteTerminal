@@ -391,10 +391,110 @@ function fmtOpenPorts(d: any): string {
   return lines.join("\n");
 }
 
+
+function fmtWhois(d: any): string {
+  const lines: string[] = [
+    `WHOIS Record — ${d.domain}`,
+    `Registrar:  ${d.registrar || d.registrarName || "N/A"}`,
+    `Creation:   ${d.creationDate || d.created || "N/A"}`,
+    `Expiry:     ${d.expiryDate || d.expires || d.registryExpiryDate || "N/A"}`,
+    `Updated:    ${d.updatedDate || d.updated || "N/A"}`,
+    `Status:     ${Array.isArray(d.domainStatus) ? d.domainStatus.join(", ") : d.domainStatus || "N/A"}`,
+    ``,
+    `── Name Servers ────────────────────────────────────────`,
+  ];
+  const ns = Array.isArray(d.nameServer) ? d.nameServer : (d.nameServer || "").split(" ");
+  ns.filter(Boolean).forEach((s: string) => lines.push(`  • ${s}`));
+  return lines.join("\n");
+}
+
+function fmtIp(d: any): string {
+  const i = d.info;
+  if (!i) return `IP: ${d.ip}\nNo additional info found.`;
+  return [
+    `IP Intelligence — ${d.domain}`,
+    `IP Address: ${d.ip}`,
+    `ASN:        ${i.as}`,
+    `ISP:        ${i.isp}`,
+    `Org:        ${i.org}`,
+    `Location:   ${i.city}, ${i.regionName}, ${i.country}`,
+    `Lat/Lon:    ${i.lat}, ${i.lon}`,
+    `Timezone:   ${i.timezone}`,
+  ].join("\n");
+}
+
+function fmtInfraMap(d: any): string {
+  const lines: string[] = [
+    `Infrastructure Map — ${d.domain}`,
+    `Resolved IP: ${d.ip}`,
+    `ASN:         ${d.asn}`,
+    `ISP/Hosting: ${d.isp}`,
+    `Organization: ${d.org}`,
+    `Location:    ${d.location}`,
+    `CDN Detect:  ${d.cdn}`,
+    ``,
+    `── Reverse IP Lookup (${d.reverseIpCount} domains total) ──────────`,
+  ];
+  if (d.reverseIp?.length) {
+    d.reverseIp.forEach((dom: string) => lines.push(`  • ${dom}`));
+    if (d.reverseIpCount > 10) lines.push(`    ... and ${d.reverseIpCount - 10} more`);
+  } else {
+    lines.push(`  No other domains found on this IP.`);
+  }
+  return lines.join("\n");
+}
+
+function fmtTakeover(d: any): string {
+  const lines: string[] = [
+    `Subdomain Takeover Audit — ${d.domain}`,
+    `Status: ${d.isVulnerable ? "⚠ VULNERABLE" : "✓ Secure (Passive)"}`,
+    ``,
+  ];
+  if (d.cname?.length) {
+    lines.push(`CNAME Records:`);
+    d.cname.forEach((c: string) => lines.push(`  → ${c}`));
+    lines.push(``);
+  }
+  if (d.takeoverRisks?.length) {
+    lines.push(`── Findings ──────────────────────────────────────────`);
+    d.takeoverRisks.forEach((r: any) => {
+      const icon = r.vulnerable ? "⚠" : "✓";
+      lines.push(`  ${icon} [${r.service}] ${r.target}`);
+      lines.push(`    Status: ${r.reachable ? "Resolving" : "NXDOMAIN (Dangling!)"}`);
+      if (r.vulnerable) lines.push(`    Action: Claim this resource or remove CNAME!`);
+    });
+  } else {
+    lines.push(d.summary);
+  }
+  return lines.join("\n");
+}
+
+function fmtScan(d: any): string {
+  const lines: string[] = [
+    `Quick Scan — ${d.domain}`,
+    `Timestamp: ${d.timestamp}`,
+    ``,
+    `── Network ────────────────────────────────────────────`,
+    `  Status:   ${d.http.reachable ? "UP ✓" : "DOWN ✗"}`,
+    `  Code:     ${d.http.status || "N/A"}`,
+    `  Server:   ${d.http.server || "Unknown"}`,
+    ``,
+    `── DNS Records ────────────────────────────────────────`,
+  ];
+  if (d.dns) {
+    if (d.dns.A?.length) lines.push(`  A:     ${d.dns.A.join(", ")}`);
+    if (d.dns.AAAA?.length) lines.push(`  AAAA:  ${d.dns.AAAA.join(", ")}`);
+    if (d.dns.CNAME?.length) lines.push(`  CNAME: ${d.dns.CNAME.join(", ")}`);
+    if (d.dns.MX?.length) lines.push(`  MX:    ${d.dns.MX.map((m: any) => m.exchange).join(", ")}`);
+  }
+  return lines.join("\n");
+}
+
 // Map command → pretty formatter (fallback = raw JSON)
 const FORMATTERS: Record<string, (d: any) => string> = {
   "headers-grade": fmtHeadersGrade,
   tls: fmtTls,
+  ssl: fmtTls,
   exposures: fmtExposures,
   securitytxt: fmtSecurityTxt,
   cors: fmtCors,
@@ -408,6 +508,11 @@ const FORMATTERS: Record<string, (d: any) => string> = {
   breach: fmtBreach,
   "ssl-chain": fmtSslChain,
   "open-ports": fmtOpenPorts,
+  whois: fmtWhois,
+  ip: fmtIp,
+  "infra-map": fmtInfraMap,
+  "takeover-check": fmtTakeover,
+  scan: fmtScan,
 };
 
 // ── help text ────────────────────────────────────────────────────────────────
@@ -418,6 +523,7 @@ const HELP_TEXT = `
 ╚══════════════════════════════════════════════════════════════╝
 
 ── Core Inspection ─────────────────────────────────────────────
+  scan     <domain>       Quick domain overview (DNS, HTTP status)
   inspect  <url>          Full site overview (status, SEO, tech, security)
   status   <url>          HTTP status code & redirect chain
   headers  <url>          Raw HTTP response headers + security audit
@@ -425,37 +531,39 @@ const HELP_TEXT = `
   links    <url>          All <a href> links on the page
 
 ── Security Analysis ────────────────────────────────────────────
-  headers-grade <url>     Deep security header audit with grade (A–F)
-  tls           <domain>  TLS/SSL certificate audit — grade, expiry, weaknesses
-  cors          <url>     CORS misconfiguration check
-  exposures     <url>     Sensitive file & path exposure check (25 paths)
-  securitytxt   <domain>  Check for RFC 9116 security.txt
+  takeover-check <domain> Dangling DNS & CNAME takeover detection
+  headers-grade  <url>    Deep security header audit with grade (A–F)
+  tls            <domain> TLS/SSL certificate audit — grade, expiry
+  ssl            <domain> (alias for tls)
+  cors           <url>    CORS misconfiguration check
+  exposures      <url>    Sensitive file & path exposure check
+  securitytxt    <domain> Check for RFC 9116 security.txt
 
-── Technology ───────────────────────────────────────────────────
-  tech     <url>          Full tech fingerprint — 35+ patterns, outdated libs
+── Intelligence & Recon ─────────────────────────────────────────
+  infra-map  <domain>     IP, ASN, Hosting, CDN, and Reverse IP Map
+  whois      <domain>     WHOIS record lookup
+  ip         <domain>     IP geolocation and ISP intelligence
+  tech       <url>        Full tech fingerprint — 35+ patterns
 
 ── DNS & Network ────────────────────────────────────────────────
   dns      <domain>       DNS records (A, AAAA, MX, TXT, NS, CNAME)
   robots   <url>          robots.txt content
   sitemap  <url>          sitemap.xml content
 
+── Admin Tools (Auth Required) ──────────────────────────────────
+  subdomains <domain>     Passive subdomain enumeration (crt.sh)
+  waf-detect <url>        WAF, CDN, and Proxy fingerprinting
+  wayback    <domain>     Find historical sensitive file exposures
+  vulns      <url>        Check technology stack against CVE database
+  shodan     <domain>     Shodan host intelligence (ports, org, vuln)
+  breach     <domain>     Search for known domain-associated breaches
+  ssl-chain  <domain>     Validate full certificate chain integrity
+  open-ports <domain>     Check for common open service ports
+
 ── Terminal ─────────────────────────────────────────────────────
   help                    Show this help
   clear                   Clear the terminal
   local                   Learn about the Windows Local Security Inspector
-
-── Admin Tools (Auth Required) ──────────────────────────────────
-  subdomains <domain>     Passive subdomain enumeration (crt.sh)
-  waf-detect <url>        WAF, CDN, and Proxy fingerprinting
-  wayback    <domain>    Find historical sensitive file exposures
-  vulns      <url>        Check technology stack against CVE database
-  shodan     <domain>    Shodan host intelligence (ports, org, vuln)
-  breach     <domain>    Search for known domain-associated breaches
-  ssl-chain  <domain>    Validate full certificate chain integrity
-  open-ports <domain>    Check for common open service ports
-
-All commands only fetch publicly available data.
-No vulnerability exploitation or active scanning is performed.
 `.trim();
 
 // ── Terminal component ───────────────────────────────────────────────────────
@@ -477,17 +585,18 @@ export default function Terminal({ userId }: { userId?: string }) {
       new Set([
         "help", "clear", "local",
         "inspect", "status", "headers", "seo", "links", "robots", "sitemap",
-        "headers-grade", "tls", "cors", "exposures", "securitytxt",
+        "headers-grade", "tls", "ssl", "cors", "exposures", "securitytxt",
         "tech", "dns",
         "subdomains", "waf-detect", "wayback",
         "vulns", "shodan", "breach",
         "ssl-chain", "open-ports",
+        "whois", "ip", "infra-map", "takeover-check", "scan",
       ]),
     []
   );
 
   // Commands that take a domain (not a URL)
-  const domainCommands = useMemo(() => new Set(["dns", "tls", "securitytxt", "subdomains", "wayback", "shodan", "breach", "ssl-chain", "open-ports"]), []);
+  const domainCommands = useMemo(() => new Set(["dns", "tls", "ssl", "securitytxt", "subdomains", "wayback", "shodan", "breach", "ssl-chain", "open-ports", "whois", "ip", "infra-map", "takeover-check", "scan", "headers", "tech"]), []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

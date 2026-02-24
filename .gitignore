@@ -56,3 +56,10 @@ yarn-error.log*
 *.orig
 *.bak
 .git/COMMIT_MSG_TEMP
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.example

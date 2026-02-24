@@ -9,7 +9,15 @@ export async function GET(req: NextRequest) {
   if (rl) return NextResponse.json(rl.body, { status: rl.status, headers: rl.headers });
 
   try {
-    const { url } = requireUrlParam(req);
+    let url = req.nextUrl.searchParams.get("url") || "";
+    const domain = req.nextUrl.searchParams.get("domain") || "";
+
+    if (!url && domain) {
+      url = `https://${domain}`;
+    }
+
+    if (!url) throw new Error("URL or Domain required");
+
     const key = `headers:${url}`;
     const cached = getCache<any>(key);
     if (cached) return NextResponse.json(cached);

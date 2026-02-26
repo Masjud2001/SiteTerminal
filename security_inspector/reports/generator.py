@@ -37,6 +37,14 @@ def generate_report(data: dict, output_path: str):
         if not p.get('signed'):
             pdf.cell(0, 10, f"- {p['name']} (PID: {p['pid']}) Path: {p['path']}", ln=True)
 
+    # Section: System Security Audit
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "2. System Security Audit", ln=True)
+    pdf.set_font("Arial", size=10)
+    for check in data.get('audit', []):
+        pdf.cell(0, 10, f"- {check['check']}: {check['value']} ({check['risk']} Risk)", ln=True)
+
     # Section: Startup Items
     pdf.ln(5)
     pdf.set_font("Arial", 'B', 12)

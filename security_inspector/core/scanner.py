@@ -17,6 +17,24 @@ class FileScanner:
             return f"Error: {str(e)}"
 
     @staticmethod
+    def calculate_entropy(file_path):
+        """Calculate Shannon entropy for a file (0-8). High entropy (>7.2) suggests packing/encryption."""
+        import math
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            if not data:
+                return 0
+            entropy = 0
+            for x in range(256):
+                p_x = float(data.count(x)) / len(data)
+                if p_x > 0:
+                    entropy += - p_x * math.log(p_x, 2)
+            return round(entropy, 2)
+        except Exception:
+            return 0
+
+    @staticmethod
     def check_virustotal(file_hash):
         """Check hash against VirusTotal API."""
         if not VIRUSTOTAL_API_KEY or VIRUSTOTAL_API_KEY == "YOUR_API_KEY_HERE":

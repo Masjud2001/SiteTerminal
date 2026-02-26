@@ -12,6 +12,8 @@ from core.port_scanner import PortScanner
 from core.startup_manager import StartupAnalyzer
 from core.scanner import FileScanner
 from core.quarantine import QuarantineManager
+from core.audit import SystemAuditor
+from core.network_monitor import NetworkMonitor
 from reports.generator import generate_report
 
 class ScanThread(QThread):
@@ -65,6 +67,8 @@ class SecurityDashboard(QMainWindow):
 
         self.init_process_tab()
         self.init_port_tab()
+        self.init_network_tab()
+        self.init_audit_tab()
         self.init_startup_tab()
         self.init_file_tab()
         self.init_quarantine_tab()
@@ -96,7 +100,8 @@ class SecurityDashboard(QMainWindow):
                 'processes': ProcessAnalyzer.get_running_processes(),
                 'ports': PortScanner.get_listening_ports(),
                 'startup': StartupAnalyzer.get_startup_items(),
-                'quarantine': QuarantineManager().list_quarantine()
+                'quarantine': QuarantineManager().list_quarantine(),
+                'audit': SystemAuditor.run_full_audit()
             }
             try:
                 generate_report(data, save_path)
@@ -183,6 +188,61 @@ class SecurityDashboard(QMainWindow):
             if p['risk'] != "Low / Standard": risk_item.setForeground(Qt.GlobalColor.yellow)
             self.port_table.setItem(row, 3, risk_item)
 
+    def init_network_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        self.net_table = QTableWidget(0, 5)
+        self.net_table.setHorizontalHeaderLabels(["Process", "PID", "Local Address", "Remote Address", "Status"])
+        self.net_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        
+        btn_refresh = QPushButton("Refresh Connections")
+        btn_refresh.clicked.connect(self.refresh_connections)
+        
+        layout.addWidget(self.net_table)
+        layout.addWidget(btn_refresh)
+        self.tabs.addTab(tab, "Network Monitor")
+        self.refresh_connections()
+
+    def refresh_connections(self):
+        conns = NetworkMonitor.get_active_connections()
+        self.net_table.setRowCount(0)
+        for c in conns:
+            row = self.net_table.rowCount()
+            self.net_table.insertRow(row)
+            self.net_table.setItem(row, 0, QTableWidgetItem(c['process']))
+            self.net_table.setItem(row, 1, QTableWidgetItem(str(c['pid'])))
+            self.net_table.setItem(row, 2, QTableWidgetItem(c['local']))
+            self.net_table.setItem(row, 3, QTableWidgetItem(c['remote']))
+            self.net_table.setItem(row, 4, QTableWidgetItem(c['status']))
+
+    def init_audit_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        self.audit_table = QTableWidget(0, 3)
+        self.audit_table.setHorizontalHeaderLabels(["Security Check", "Status", "Risk Level"])
+        self.audit_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        
+        btn_refresh = QPushButton("Run System Audit")
+        btn_refresh.clicked.connect(self.refresh_audit)
+        
+        layout.addWidget(self.audit_table)
+        layout.addWidget(btn_refresh)
+        self.tabs.addTab(tab, "System Audit")
+        self.refresh_audit()
+
+    def refresh_audit(self):
+        checks = SystemAuditor.run_full_audit()
+        self.audit_table.setRowCount(0)
+        for c in checks:
+            row = self.audit_table.rowCount()
+            self.audit_table.insertRow(row)
+            self.audit_table.setItem(row, 0, QTableWidgetItem(c['check']))
+            self.audit_table.setItem(row, 1, QTableWidgetItem(c['value']))
+            risk_item = QTableWidgetItem(c['risk'])
+            if c['risk'] == "High": risk_item.setForeground(Qt.GlobalColor.red)
+            elif c['risk'] == "Medium": risk_item.setForeground(Qt.GlobalColor.yellow)
+            self.audit_table.setItem(row, 2, risk_item)
+
     def init_startup_tab(self):
         tab = QWidget()
         layout = QVBoxLayout(tab)
@@ -230,14 +290,17 @@ class SecurityDashboard(QMainWindow):
         if file_path:
             self.file_label.setText(f"File: {file_path}")
             sha256 = FileScanner.get_sha256(file_path)
-            self.result_label.setText(f"SHA256: {sha256}\nChecking VirusTotal...")
+            entropy = FileScanner.calculate_entropy(file_path)
+            entropy_msg = f"Entropy: {entropy} " + ("(Suspiciously High)" if entropy > 7.2 else "(Normal)")
+            
+            self.result_label.setText(f"SHA256: {sha256}\n{entropy_msg}\nChecking VirusTotal...")
             
             # API Call (In real app, use a background thread)
             vt_res = FileScanner.check_virustotal(sha256)
             if vt_res['status'] == 'success':
-                self.result_label.setText(f"SHA256: {sha256}\n\nVirusTotal Result: {vt_res['ratio']} detections.")
+                self.result_label.setText(f"SHA256: {sha256}\n{entropy_msg}\n\nVirusTotal Result: {vt_res['ratio']} detections.")
             else:
-                self.result_label.setText(f"SHA256: {sha256}\n\nVirusTotal: {vt_res['message']}")
+                self.result_label.setText(f"SHA256: {sha256}\n{entropy_msg}\n\nVirusTotal: {vt_res['message']}")
 
     def init_quarantine_tab(self):
         tab = QWidget()
